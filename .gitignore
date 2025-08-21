@@ -1,0 +1,13 @@
+# Git ignore file 
+
+# Node
+frontend/node_modules/
+frontend/build/
+
+# Java
+backend/target/
+
+# IDE
+*.iml
+.idea/
+.vscode/
