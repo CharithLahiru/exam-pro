@@ -17,7 +17,7 @@ function App() {
         <main>
           <Routes>
             <Route
-              path="/"
+              path="/exam-pro"
               element={
                 <>
                   <SearchBar />

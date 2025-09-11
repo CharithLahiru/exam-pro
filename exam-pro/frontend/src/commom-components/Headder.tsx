@@ -1,4 +1,4 @@
-import { use, useState } from "react";
+import { useState } from "react";
 import examProLogo from "../assets/examProLogo.svg";
 import "./Headder.css";
 import { Link } from "react-router-dom";
