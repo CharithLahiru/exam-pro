@@ -17,3 +17,9 @@ body {
     margin: 0 auto;
     padding: 0 20px;
 }
+main{
+    padding: 0 50px 0 50px;
+}
+html {
+  scroll-behavior: smooth;
+}

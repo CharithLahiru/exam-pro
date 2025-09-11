@@ -1,14 +1,20 @@
+import "./Search-bar.css";
 const SearchBar = () => {
   return (
-    <div>
-      <div>
-        <input
-          type="text"
-          placeholder="Search for courses, topics, practice tests... "
-        ></input>
-        <div className="search-icon">🔍</div>
+    <>
+      <div className="container">
+        <div className="search-container">
+          <div className="search-bar">
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Search for courses, topics, or practice tests..."
+            ></input>
+            <div className="search-icon">🔍</div>
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
