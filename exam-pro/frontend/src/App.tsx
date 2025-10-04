@@ -1,10 +1,10 @@
 import "./App.css";
-import Headder from "./commom-components/Headder";
-import SearchBar from "./commom-components/Search-bar";
-import Welcome from "./Home/Welcome";
-import Stats from "./Home/stats";
-import Categories from "./Home/Categories";
-import Footer from "./commom-components/Footer";
+import Headder from "./pages/common-components/Headder";
+import SearchBar from "./pages/common-components/Search-bar";
+import Welcome from "./pages/Home/Welcome";
+import Stats from "./pages/Home/stats";
+import Categories from "./pages/Home/Categories";
+import Footer from "./pages/common-components/Footer";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import TeachersHome from "./pages/TeachersHome";
 
@@ -27,7 +27,7 @@ function App() {
                 </>
               }
             />
-            <Route path="/TeachersHome" element={<TeachersHome />} />
+            <Route path="/exam-pro/TeachersHome" element={<TeachersHome />} />
           </Routes>
         </main>
         <Footer />

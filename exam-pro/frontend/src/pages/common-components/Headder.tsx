@@ -1,12 +1,33 @@
-import { useState } from "react";
-import examProLogo from "../assets/examProLogo.svg";
-import "./Headder.css";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import examProLogo from "../../assets/examProLogo.svg";
+import "../common-components/Headder.css";
+import { Link, useLocation } from "react-router-dom";
+import AccountService from "../../service/account/AccountService";
+import type { AccountInformation } from "../../data/account/AccountInformation";
 
 const Headder = () => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const location = useLocation();
+  const [buttonText, setButtonText] = useState("Continue as Teacher");
+  const [buttonRoute, setButtonRoute] = useState("/exam-pro/TeachersHome");
+  const accountService = new AccountService();
+
+  useEffect(() => {
+    if (location.pathname === "/exam-pro") {
+      setButtonText("Continue as Teacher");
+      setButtonRoute("/exam-pro/TeachersHome");
+    } else if (location.pathname === "/exam-pro/TeachersHome") {
+      setButtonText("Continue as Student");
+      setButtonRoute("/exam-pro");
+    } else {
+      setButtonText("Continue as Teacher");
+      setButtonRoute("/exam-pro/TeachersHome");
+    }
+  }, [location.pathname]);
 
   const openLoginModal = () => {
     setIsLoginModalOpen(true);
@@ -30,10 +51,30 @@ const Headder = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Handle login logic here
-    console.log("Login form submitted");
+    const formData = new FormData(e.currentTarget);
+
+    const accInfo: AccountInformation = {
+      userId: formData.get("userId")
+        ? Number(formData.get("userId"))
+        : undefined,
+      userName: String(formData.get("userName") || ""),
+      firstNane: String(formData.get("firstNane") || ""),
+      lastNane: String(formData.get("lastNane") || ""),
+      email: formData.get("email")?.toString() || null,
+      mobile: formData.get("mobile")?.toString() || null,
+      accountType: formData.get("accountType")?.toString() || null,
+      isActive: formData.get("isActive") === "true", // checkbox or dropdown
+    };
+
+    try {
+      const response = await accountService.saveAccountInformation(accInfo);
+      console.log("form submitted");
+      console.log(response.data);
+    } catch (error) {
+      console.log("form submitted faild");
+    }
   };
 
   const handleForgotPassword = (e: React.FormEvent<HTMLFormElement>) => {
@@ -43,6 +84,8 @@ const Headder = () => {
     setShowForgotPassword(false);
   };
 
+  const toggleMenu = () => setMenuOpen(!menuOpen);
+
   return (
     <>
       <header className="header">
@@ -51,20 +94,23 @@ const Headder = () => {
             <div className="logo">
               <img src={examProLogo} alt="Logo" width={100}></img>
             </div>
-            <div className="nav-links">
+            <div className={`nav-links ${menuOpen ? "active" : ""}`}>
               <a href="#" className="nav-link">
                 Home
               </a>
               <a href="#categories" className="nav-link">
                 Courses
               </a>
-              <Link to="/TeachersHome" className="btn-secondary">
-                Continue as Teacher
+              <Link to={buttonRoute} className="btn-secondary">
+                {buttonText}
               </Link>
               <a onClick={openLoginModal} className="btn-primary">
                 Log In
               </a>
             </div>
+            <button className="menu-toggle" onClick={toggleMenu}>
+              ☰
+            </button>
           </nav>
         </div>
       </header>
