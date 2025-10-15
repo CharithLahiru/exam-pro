@@ -1,5 +1,6 @@
 package com.logicx.exampro.entity;
 
+import com.logicx.exampro.dto.UserRequest;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -64,6 +65,16 @@ public class User {
         this.accountType = accountType;
         this.imageRef = imageRef;
         this.lastLoginTime = lastLoginTime;
+    }
+
+    public User(UserRequest userRequest) {
+        this.username = userRequest.getUsername();
+        this.firstName = userRequest.getFirstName();
+        this.lastName = userRequest.getLastName();
+        this.email = userRequest.getEmail();
+        this.accountType = userRequest.getAccountType();
+        this.password = userRequest.getPassword();
+        this.mobile = userRequest.getMobile();
     }
 
     public String getUsername() {
