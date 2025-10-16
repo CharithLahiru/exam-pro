@@ -1,5 +1,6 @@
 package com.logicx.exampro.entity;
 
+import com.logicx.exampro.dto.QuestionRequest;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -27,6 +28,14 @@ public class Question {
 
     public Question() {
     }
+
+    public Question(QuestionRequest questionRequest) {
+        this.questionCategory=questionRequest.getQuestionCategory();
+        this.question=questionRequest.getQuestion();
+        this.questionImgRef=questionRequest.getQuestionImgRef();
+        this.status="PENDING";
+    }
+
 
     public String getQuestionId() {
         return questionId;
