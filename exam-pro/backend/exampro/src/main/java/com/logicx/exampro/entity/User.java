@@ -1,10 +1,7 @@
 package com.logicx.exampro.entity;
 
 import com.logicx.exampro.dto.UserRequest;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 
@@ -49,6 +46,16 @@ public class User {
     @Column(name = "LASTLOGINTIME")
     private LocalDateTime lastLoginTime;
 
+    // Store Keycloak user ID for reference
+    @Column(name = "keycloak_id")
+    private String keycloakId;
+
+    @Column(name = "created_at")
+    private java.time.LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private java.time.LocalDateTime updatedAt;
+
     public User() {
     }
 
@@ -65,8 +72,9 @@ public class User {
         this.accountType = accountType;
         this.imageRef = imageRef;
         this.lastLoginTime = lastLoginTime;
+        this.createdAt = java.time.LocalDateTime.now();
+        this.updatedAt = java.time.LocalDateTime.now();
     }
-
     public User(UserRequest userRequest) {
         this.username = userRequest.getUsername();
         this.firstName = userRequest.getFirstName();
@@ -75,6 +83,13 @@ public class User {
         this.accountType = userRequest.getAccountType();
         this.password = userRequest.getPassword();
         this.mobile = userRequest.getMobile();
+        this.createdAt = java.time.LocalDateTime.now();
+        this.updatedAt = java.time.LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = java.time.LocalDateTime.now();
     }
 
     public String getUsername() {
@@ -171,5 +186,29 @@ public class User {
 
     public void setLastLoginTime(LocalDateTime lastLoginTime) {
         this.lastLoginTime = lastLoginTime;
+    }
+
+    public String getKeycloakId() {
+        return keycloakId;
+    }
+
+    public void setKeycloakId(String keycloakId) {
+        this.keycloakId = keycloakId;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

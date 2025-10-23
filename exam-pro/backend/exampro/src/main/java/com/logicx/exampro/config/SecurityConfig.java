@@ -21,6 +21,12 @@ import java.util.List;
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
+    private final KeycloakJwtAuthenticationConverter keycloakJwtAuthenticationConverter;
+
+    public SecurityConfig(KeycloakJwtAuthenticationConverter keycloakJwtAuthenticationConverter) {
+        this.keycloakJwtAuthenticationConverter = keycloakJwtAuthenticationConverter;
+    }
+
     // List of public endpoints that don't require authentication
     private static final String[] PUBLIC_URLS = {
             // Swagger UI
@@ -37,10 +43,16 @@ public class SecurityConfig {
             // Public API endpoints
             "/api/public/**",
 
+            // Authentication endpoints - MUST BE PUBLIC
+            "/api/auth/**",
+
+            // User registration - MUST BE PUBLIC
+            "/account/createuser",
+
             // Health check
             "/actuator/health",
             "/health",
-            "/**"       // this line will remove all authentication
+//            "/**"       // this line will remove all authentication
     };
 
     @Bean
@@ -62,22 +74,22 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(keycloakJwtAuthenticationConverter))
                 );
 
         return http.build();
     }
 
-    @Bean
-    public JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
-        grantedAuthoritiesConverter.setAuthorityPrefix("ROLE_");
-        grantedAuthoritiesConverter.setAuthoritiesClaimName("realm_access.roles");
-
-        JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
-        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
-        return jwtAuthenticationConverter;
-    }
+//    @Bean
+//    public JwtAuthenticationConverter jwtAuthenticationConverter() {
+//        JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
+//        grantedAuthoritiesConverter.setAuthorityPrefix("ROLE_");
+//        grantedAuthoritiesConverter.setAuthoritiesClaimName("roles");
+//
+//        JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
+//        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(new KeycloakJwtAuthenticationConverter());
+//        return jwtAuthenticationConverter;
+//    }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
