@@ -23,15 +23,15 @@ public class AuthenticationController {
      * Register a new user
      * POST /api/auth/register
      */
-    @PostMapping("/register")
-    public ResponseEntity<StatusResponse> registerUser(@Valid @RequestBody UserRequest userRequest) {
-        StatusResponse response = keycloakUserService.createUser(userRequest);
-
-        if (response.isSuccess()) {
-            return ResponseEntity.ok(response);
-        }
-        return ResponseEntity.badRequest().body(response);
-    }
+//    @PostMapping("/register")
+//    public ResponseEntity<StatusResponse> registerUser(@Valid @RequestBody UserRequest userRequest) {
+//        StatusResponse response = keycloakUserService.createUser(userRequest);
+//
+//        if (response.isSuccess()) {
+//            return ResponseEntity.ok(response);
+//        }
+//        return ResponseEntity.badRequest().body(response);
+//    }
 
     /**
      * Login user and get JWT token

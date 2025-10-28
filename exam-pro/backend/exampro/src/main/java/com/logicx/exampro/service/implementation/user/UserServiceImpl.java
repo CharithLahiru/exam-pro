@@ -1,5 +1,6 @@
 package com.logicx.exampro.service.implementation.user;
 
+import com.logicx.exampro.config.KeycloakUserService;
 import com.logicx.exampro.dto.StatusResponse;
 import com.logicx.exampro.dto.UserRequest;
 import com.logicx.exampro.dto.UserResponse;
@@ -12,9 +13,11 @@ import org.springframework.stereotype.Service;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final KeycloakUserService keycloakUserService;
 
-    public UserServiceImpl(UserRepository userRepository) {
+    public UserServiceImpl(UserRepository userRepository, KeycloakUserService keycloakUserService) {
         this.userRepository = userRepository;
+        this.keycloakUserService = keycloakUserService;
     }
 
     @Override
@@ -38,21 +41,32 @@ public class UserServiceImpl implements UserService {
     @Override
     public StatusResponse createUser(UserRequest userRequest) {
 
-        //TODO: add audit log here
-        try{
-        // Check if username already exists
-        if (userRepository.existsById(userRequest.getUsername())) {
-            throw new RuntimeException("Username already exists: " + userRequest.getUsername());
-        }
+        try {
+            // Check if username already exists in local DB
+            if (userRepository.existsById(userRequest.getUsername())) {
+                return StatusResponse.error("Username already exists: " + userRequest.getUsername());
+            }
 
-        User user = new User(userRequest);
-        User savedUser = userRepository.save(user);
+            // Create user in Keycloak first
+            String keycloakUserId = keycloakUserService.createKeycloakUser(userRequest);
 
-        UserResponse userResponse = new UserResponse(savedUser);
-        return StatusResponse.success("User created successfully", userResponse);
+            if (keycloakUserId == null) {
+                return StatusResponse.error("Failed to create user in Keycloak");
+            }
+
+            // Save user to local database
+            User user = new User(userRequest);
+            user.setKeycloakId(keycloakUserId);
+            User savedUser = userRepository.save(user);
+
+            UserResponse userResponse = new UserResponse(savedUser);
+            return StatusResponse.success("User created successfully", userResponse);
+
         } catch (Exception e) {
-            return StatusResponse.error("Failed to create user: " + e.getMessage());
+            //TODO:  if user creation in db not successful delete keycloak user
+            return StatusResponse.error("Failed to create user: ");
         }
+
     }
 
     @Override

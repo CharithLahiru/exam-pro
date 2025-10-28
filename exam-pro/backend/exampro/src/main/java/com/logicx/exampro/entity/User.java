@@ -19,9 +19,6 @@ public class User {
     @Column(name = "LASTNAME", length = 50)
     private String lastName;
 
-    @Column(name = "PASSWORD", length = 20)
-    private String password;
-
     @Column(name = "CREATEDBY", length = 30)
     private String createdBy;
 
@@ -59,29 +56,12 @@ public class User {
     public User() {
     }
 
-    public User(String username, String firstName, String lastName, String password, String createdBy, LocalDateTime createDate, String email, String mobile, String isActive, String accountType, String imageRef, LocalDateTime lastLoginTime) {
-        this.username = username;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.password = password;
-        this.createdBy = createdBy;
-        this.createDate = createDate;
-        this.email = email;
-        this.mobile = mobile;
-        this.isActive = isActive;
-        this.accountType = accountType;
-        this.imageRef = imageRef;
-        this.lastLoginTime = lastLoginTime;
-        this.createdAt = java.time.LocalDateTime.now();
-        this.updatedAt = java.time.LocalDateTime.now();
-    }
     public User(UserRequest userRequest) {
         this.username = userRequest.getUsername();
         this.firstName = userRequest.getFirstName();
         this.lastName = userRequest.getLastName();
         this.email = userRequest.getEmail();
         this.accountType = userRequest.getAccountType();
-        this.password = userRequest.getPassword();
         this.mobile = userRequest.getMobile();
         this.createdAt = java.time.LocalDateTime.now();
         this.updatedAt = java.time.LocalDateTime.now();
@@ -114,14 +94,6 @@ public class User {
 
     public void setLastName(String lastName) {
         this.lastName = lastName;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     public String getCreatedBy() {

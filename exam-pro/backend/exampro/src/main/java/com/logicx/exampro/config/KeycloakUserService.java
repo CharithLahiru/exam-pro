@@ -89,7 +89,7 @@ public class KeycloakUserService {
     /**
      * Creates user in Keycloak and returns the Keycloak user ID
      */
-    private String createKeycloakUser(UserRequest userRequest) {
+    public String createKeycloakUser(UserRequest userRequest) {
         Keycloak keycloak = null;
         try {
             // Initialize Keycloak admin client
@@ -124,7 +124,7 @@ public class KeycloakUserService {
             Response response = usersResource.create(user);
 
             if (response.getStatus() != 201) {
-                throw new RuntimeException("Failed to create user in Keycloak: " + response.getStatusInfo());
+                if(!"Created".equalsIgnoreCase(response.toString()))  throw new RuntimeException("Failed to create user in Keycloak: " + response.getStatusInfo());
             }
 
             // Extract user ID from location header
