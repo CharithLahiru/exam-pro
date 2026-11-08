@@ -2,7 +2,7 @@ import Service from "../Service";
 import type { AxiosResponse } from "axios";
 import axios from "../../api/Axios";
 import type { ResponseData } from "../../types/common/CommonTypes";
-import type { AccountInformation, SignInInformation, AuthResponse, LogoutInfromation } from "../../data/account/AccountInformation";
+import type { AccountInformation, SignInInformation, LogoutInfromation } from "../../data/account/AccountInformation";
 
 class AccountSerice extends Service {
     private abortController: AbortController;
@@ -75,25 +75,30 @@ class AccountSerice extends Service {
             refreshToken: String(localStorage.getItem('refreshToken') || ""),
         };
         try {
-            const institutionResponse = await this.axiosPrivate.post<
-                ResponseData<AuthResponse>
-            >(this.AUTHENTICATION_ROOT_URL + "/logout", logoutInfo);
-
-            if (institutionResponse.status === 200) {
-                localStorage.removeItem("loggedInUser");
-                localStorage.removeItem("accessToken");
-                localStorage.removeItem("refreshToken");
-                localStorage.removeItem("tokenType");
-                localStorage.removeItem("tokenExpiry");
-                return institutionResponse;
-            } else {
-                throw new Error("Logout failed");
-            }
+            // Use public axios to avoid sending expired Bearer tokens in Authorization header
+            const response = await axios.post<ResponseData<any>>(
+                this.AUTHENTICATION_ROOT_URL + "/logout",
+                logoutInfo
+            );
+            return response;
         } catch (error: any) {
             if (error.isAxiosError && error.response) {
                 return error.response;
             }
-            throw error;
+            return {
+                data: { message: "Logout completed locally" },
+                status: 200,
+                statusText: "OK",
+                headers: {},
+                config: {} as any,
+            } as AxiosResponse;
+        } finally {
+            // Unconditionally purge authentication data from local storage
+            localStorage.removeItem("loggedInUser");
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+            localStorage.removeItem("tokenType");
+            localStorage.removeItem("tokenExpiry");
         }
     }
 }

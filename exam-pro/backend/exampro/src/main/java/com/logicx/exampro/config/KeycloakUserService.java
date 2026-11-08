@@ -11,7 +11,13 @@ import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -48,8 +54,62 @@ public class KeycloakUserService {
     @Value("${keycloak.admin.password}")
     private String adminPassword;
 
+    private static final Logger log = LoggerFactory.getLogger(KeycloakUserService.class);
+
+    @Value("${keycloak.session.idle-timeout:600}")
+    private Integer sessionIdleTimeout;
+
+    @Value("${keycloak.session.access-token-lifespan:300}")
+    private Integer accessTokenLifespan;
+
     private final UserRepository userRepository;
     private final RestTemplate restTemplate;
+
+    /**
+     * Synchronizes Keycloak realm session idle timeout and access token lifespan on startup.
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    public void syncRealmSessionTimeouts() {
+        Keycloak keycloak = null;
+        try {
+            log.info("Synchronizing Keycloak realm session timeouts: idleTimeout={}s, accessTokenLifespan={}s",
+                    sessionIdleTimeout, accessTokenLifespan);
+            keycloak = KeycloakBuilder.builder()
+                    .serverUrl(keycloakServerUrl)
+                    .realm("master")
+                    .username(adminUsername)
+                    .password(adminPassword)
+                    .clientId("admin-cli")
+                    .build();
+
+            RealmResource realmResource = keycloak.realm(realm);
+            RealmRepresentation realmRep = realmResource.toRepresentation();
+
+            boolean updated = false;
+            if (realmRep.getSsoSessionIdleTimeout() == null || !realmRep.getSsoSessionIdleTimeout().equals(sessionIdleTimeout)) {
+                realmRep.setSsoSessionIdleTimeout(sessionIdleTimeout);
+                updated = true;
+            }
+            if (realmRep.getAccessTokenLifespan() == null || !realmRep.getAccessTokenLifespan().equals(accessTokenLifespan)) {
+                realmRep.setAccessTokenLifespan(accessTokenLifespan);
+                updated = true;
+            }
+
+            if (updated) {
+                realmResource.update(realmRep);
+                log.info("Successfully synchronized Keycloak realm '{}' session idle timeout to {}s and access token lifespan to {}s",
+                        realm, sessionIdleTimeout, accessTokenLifespan);
+            } else {
+                log.info("Keycloak realm '{}' session timeouts are already up-to-date", realm);
+            }
+        } catch (Exception e) {
+            log.warn("Could not synchronize Keycloak realm session timeouts (Keycloak may be initializing or unreachable): {}", e.getMessage());
+        } finally {
+            if (keycloak != null) {
+                keycloak.close();
+            }
+        }
+    }
 
     public KeycloakUserService(UserRepository userRepository) {
         this.userRepository = userRepository;
@@ -80,8 +140,9 @@ public class KeycloakUserService {
 
             UserResponse userResponse = new UserResponse(savedUser);
             return StatusResponse.success("User created successfully", userResponse);
-
         } catch (Exception e) {
+
+
             return StatusResponse.error("Failed to create user: " + e.getMessage());
         }
     }
@@ -139,8 +200,9 @@ public class KeycloakUserService {
 
             response.close();
             return userId;
-
         } catch (Exception e) {
+
+
             throw new RuntimeException("Error creating Keycloak user: " + e.getMessage(), e);
         } finally {
             if (keycloak != null) {
@@ -184,6 +246,7 @@ public class KeycloakUserService {
             realmResource.users().get(userId).roles().realmLevel()
                     .add(Collections.singletonList(roleRepresentation));
         } catch (Exception e) {
+
             throw new RuntimeException("Failed to assign role: " + roleName, e);
         }
     }
@@ -241,8 +304,9 @@ public class KeycloakUserService {
             }
 
             throw new RuntimeException("Authentication failed");
-
         } catch (Exception e) {
+
+
             throw new RuntimeException("Authentication error: " + e.getMessage(), e);
         }
     }
@@ -280,8 +344,9 @@ public class KeycloakUserService {
             }
 
             throw new RuntimeException("Token refresh failed");
-
         } catch (Exception e) {
+
+
             throw new RuntimeException("Token refresh error: " + e.getMessage(), e);
         }
     }
@@ -290,6 +355,10 @@ public class KeycloakUserService {
      * Logs out user by invalidating tokens
      */
     public void logoutUser(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            log.info("Logout requested with empty refresh token; treating as already logged out.");
+            return;
+        }
         try {
 //            String logoutUrl = keycloakServerUrl + "/realms/" + realm + "/protocol/openid-connect/logout";
             String logoutUrl = keycloakServerUrl + "/realms/" + realm + "/protocol/openid-connect/logout";
@@ -305,8 +374,15 @@ public class KeycloakUserService {
             HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(formData, headers);
 
             restTemplate.postForEntity(logoutUrl, request, Void.class);
+            log.info("Successfully revoked user session in Keycloak.");
 
+
+        } catch (HttpClientErrorException e) {
+            log.warn("Keycloak reported client status on logout (token may be expired or already revoked): status={}, body={}",
+                    e.getStatusCode(), e.getResponseBodyAsString());
         } catch (Exception e) {
+
+            log.error("Unexpected error during Keycloak logout: {}", e.getMessage(), e);
             throw new RuntimeException("Logout error: " + e.getMessage(), e);
         }
     }

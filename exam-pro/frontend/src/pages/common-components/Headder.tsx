@@ -45,20 +45,43 @@ const Headder = () => {
     }
   }, [location.pathname]);
 
-  // Check if user is logged in on component mount
+  // Check if user is logged in on component mount and listen for auth expiration
   useEffect(() => {
-    // Check localStorage or session for logged in user
-    const loggedInUser = localStorage.getItem("loggedInUser");
-    if (loggedInUser) {
-      try {
-        const userData = JSON.parse(loggedInUser);
-        setIsLoggedIn(true);
-        setUserName(userData.username || userData.firstName || "User");
-        setUserProfileImage(userData.profileImage || null);
-      } catch {
-        localStorage.removeItem("loggedInUser");
+    const checkLoggedInStatus = () => {
+      const loggedInUser = localStorage.getItem("loggedInUser");
+      if (loggedInUser) {
+        try {
+          const userData = JSON.parse(loggedInUser);
+          setIsLoggedIn(true);
+          setUserName(userData.username || userData.firstName || "User");
+          setUserProfileImage(userData.profileImage || null);
+        } catch {
+          localStorage.removeItem("loggedInUser");
+          setIsLoggedIn(false);
+          setUserName("");
+          setUserProfileImage(null);
+        }
+      } else {
+        setIsLoggedIn(false);
+        setUserName("");
+        setUserProfileImage(null);
       }
-    }
+    };
+
+    checkLoggedInStatus();
+
+    const handleAuthExpired = () => {
+      console.warn("Session expired. Logging out user.");
+      setIsLoggedIn(false);
+      setUserName("");
+      setUserProfileImage(null);
+      setShowUserDropdown(false);
+    };
+
+    window.addEventListener("auth:expired", handleAuthExpired);
+    return () => {
+      window.removeEventListener("auth:expired", handleAuthExpired);
+    };
   }, []);
 
   const openSignInModal = () => {
@@ -207,8 +230,11 @@ const Headder = () => {
   };
 
   const handleLogout = async () => {
-    const response = await accountService.logout();
-    if (response.status === 200) {
+    try {
+      await accountService.logout();
+    } catch (error) {
+      console.warn("Logout request encountered an error, completing client logout:", error);
+    } finally {
       setIsLoggedIn(false);
       setUserName("");
       setUserProfileImage(null);

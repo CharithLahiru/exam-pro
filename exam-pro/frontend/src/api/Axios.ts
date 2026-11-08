@@ -66,10 +66,16 @@ axiosPrivate.interceptors.response.use(
         return axiosPrivate(originalRequest);
 
       } catch (refreshError) {
-        // Refresh token failed - redirect to login or handle accordingly
+        // Refresh token failed - session expired or invalidated
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('loggedInUser');
+        localStorage.removeItem('tokenType');
+        localStorage.removeItem('tokenExpiry');
+
+        // Broadcast session expiration event to update UI components
+        window.dispatchEvent(new CustomEvent('auth:expired'));
+
         return Promise.reject(refreshError);
       }
     }
