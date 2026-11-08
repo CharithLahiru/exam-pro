@@ -28,6 +28,9 @@ const Headder = () => {
   const accountService = new AccountService();
 
   const [passwordError, setPasswordError] = useState("");
+  const [signInUsername, setSignInUsername] = useState("");
+  const [signInSuccessMessage, setSignInSuccessMessage] = useState("");
+  const [createAccountError, setCreateAccountError] = useState("");
 
   useEffect(() => {
     if (location.pathname === "/exam-pro") {
@@ -47,10 +50,14 @@ const Headder = () => {
     // Check localStorage or session for logged in user
     const loggedInUser = localStorage.getItem("loggedInUser");
     if (loggedInUser) {
-      const userData = JSON.parse(loggedInUser);
-      setIsLoggedIn(true);
-      setUserName(userData.username || userData.firstName || "User");
-      setUserProfileImage(userData.profileImage || null);
+      try {
+        const userData = JSON.parse(loggedInUser);
+        setIsLoggedIn(true);
+        setUserName(userData.username || userData.firstName || "User");
+        setUserProfileImage(userData.profileImage || null);
+      } catch {
+        localStorage.removeItem("loggedInUser");
+      }
     }
   }, []);
 
@@ -58,18 +65,24 @@ const Headder = () => {
     setIsSignInModalOpen(true);
     setIsCreateAccountModalOpen(false);
     setShowForgotPassword(false);
+    setPasswordError("");
+    setSignInSuccessMessage("");
   };
 
   const openCreateAccountModal = () => {
     setIsCreateAccountModalOpen(true);
     setIsSignInModalOpen(false);
     setShowForgotPassword(false);
+    setCreateAccountError("");
   };
 
   const closeAllModals = () => {
     setIsSignInModalOpen(false);
     setIsCreateAccountModalOpen(false);
     setShowForgotPassword(false);
+    setPasswordError("");
+    setCreateAccountError("");
+    setSignInSuccessMessage("");
     setProfileImage(null);
   };
 
@@ -88,10 +101,12 @@ const Headder = () => {
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setPasswordError("");
+    setSignInSuccessMessage("");
     const formData = new FormData(e.currentTarget);
 
     const credentials: SignInInformation = {
-      username: String(formData.get("username") || ""),
+      username: String(formData.get("username") || "").trim(),
       password: String(formData.get("password") || ""),
     };
 
@@ -101,7 +116,7 @@ const Headder = () => {
       const statusCode = response.status;
       if (statusCode === 200) {
         setPasswordError("");
-      } else if (statusCode === 400) {
+      } else if (statusCode === 400 || statusCode === 401) {
         setPasswordError("Invalid username or password");
         return;
       } else {
@@ -109,11 +124,10 @@ const Headder = () => {
         return;
       }
 
-      // Simulate successful login
       const userData = {
         username: credentials.username,
         firstName: credentials.username,
-        profileImage: null, // Will be set if user has uploaded image
+        profileImage: null,
       };
 
       // Store user data
@@ -126,47 +140,59 @@ const Headder = () => {
 
       closeAllModals();
     } catch (error) {
-      console.log("Sign in failed:", error);
+      console.error("Sign in failed:", error);
+      setPasswordError("Invalid username or password");
     }
   };
 
   const handleCreateAccount = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setCreateAccountError("");
     const formData = new FormData(e.currentTarget);
 
     const accInfo: AccountInformation = {
       userId: formData.get("userId")
         ? Number(formData.get("userId"))
         : undefined,
-      username: String(formData.get("username") || ""),
-      firstName: String(formData.get("firstName") || ""),
-      lastName: String(formData.get("lastName") || ""),
-      email: formData.get("email")?.toString() || null,
-      mobile: formData.get("mobile")?.toString() || null,
-      accountType: formData.get("accountType")?.toString() || "ROLE_STUDENT",
+      username: String(formData.get("username") || "").trim(),
+      firstName: String(formData.get("firstName") || "").trim(),
+      lastName: String(formData.get("lastName") || "").trim(),
+      email: formData.get("email")?.toString()?.trim() || null,
+      mobile: formData.get("mobile")?.toString()?.trim() || null,
+      accountType: formData.get("accountType")?.toString() || "STUDENT",
       isActive: true,
       password: String(formData.get("password") || ""),
     };
 
     try {
       const response = await accountService.saveAccountInformation(accInfo);
-      console.log("Account created successfully:", response.data);
 
-      // Auto login after account creation
-      const userData = {
-        username: accInfo.username,
-        firstName: accInfo.firstName,
-        profileImage: profileImage,
-      };
+      if (response.status === 200 || response.status === 201) {
+        if (response.data && response.data.success === false) {
+          setCreateAccountError(
+            response.data.message || "Failed to create account. Please try again."
+          );
+          return;
+        }
 
-      localStorage.setItem("loggedInUser", JSON.stringify(userData));
-      setIsLoggedIn(true);
-      setUserName(accInfo.firstName || accInfo.username);
-      setUserProfileImage(profileImage);
-
-      closeAllModals();
+        // Successfully created account: transition to login modal
+        setIsCreateAccountModalOpen(false);
+        setSignInUsername(accInfo.username);
+        setSignInSuccessMessage(
+          "Account created successfully! Please sign in with your credentials."
+        );
+        setPasswordError("");
+        setIsSignInModalOpen(true);
+      } else {
+        const errorMsg =
+          response.data?.message ||
+          response.data?.error ||
+          "Failed to create account. Please try again.";
+        setCreateAccountError(errorMsg);
+      }
     } catch (error) {
-      console.log("Account creation failed:", error);
+      console.error("Account creation failed:", error);
+      setCreateAccountError("A network or server error occurred. Please try again.");
     }
   };
 
@@ -176,19 +202,19 @@ const Headder = () => {
     const email = formData.get("resetEmail");
 
     console.log("Password reset requested for:", email);
-    // Add your password reset logic here
     setShowForgotPassword(false);
     setIsSignInModalOpen(true);
   };
 
-  const handleLogout = () => {
-    // Clear user data
-    localStorage.removeItem("loggedInUser");
-    setIsLoggedIn(false);
-    setUserName("");
-    setUserProfileImage(null);
-    setShowUserDropdown(false);
-    console.log("User logged out");
+  const handleLogout = async () => {
+    const response = await accountService.logout();
+    if (response.status === 200) {
+      setIsLoggedIn(false);
+      setUserName("");
+      setUserProfileImage(null);
+      setShowUserDropdown(false);
+      console.log("User logged out");
+    }
   };
 
   const toggleUserDropdown = () => {
@@ -294,6 +320,12 @@ const Headder = () => {
               <p>Sign in to your account</p>
             </div>
 
+            {signInSuccessMessage && (
+              <div className="success-message">
+                <span>✓</span> {signInSuccessMessage}
+              </div>
+            )}
+
             {!showForgotPassword ? (
               <form className="create-account-form" onSubmit={handleSignIn}>
                 <div className="form-group">
@@ -304,6 +336,8 @@ const Headder = () => {
                     name="username"
                     required
                     className="form-input"
+                    value={signInUsername}
+                    onChange={(e) => setSignInUsername(e.target.value)}
                   />
                 </div>
 
@@ -494,6 +528,12 @@ const Headder = () => {
                   </label>
                 </div>
               </div>
+
+              {createAccountError && (
+                <div className="error-message" style={{ marginBottom: "1rem" }}>
+                  {createAccountError}
+                </div>
+              )}
 
               <button type="submit" className="create-account-submit-btn">
                 Create Account

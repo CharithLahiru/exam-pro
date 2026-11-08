@@ -49,7 +49,7 @@ axiosPrivate.interceptors.response.use(
       try {
         // Attempt to refresh the token
         const refreshToken = localStorage.getItem('refreshToken');
-        const response = await axios.post(`${BASE_URL}/auth/refresh`, {
+        const response = await axios.post(`${BASE_URL}/api/auth/refresh`, {
           refreshToken: refreshToken
         });
 
@@ -69,7 +69,7 @@ axiosPrivate.interceptors.response.use(
         // Refresh token failed - redirect to login or handle accordingly
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
-        window.location.href = '/login'; // Redirect to login
+        localStorage.removeItem('loggedInUser');
         return Promise.reject(refreshError);
       }
     }

@@ -43,6 +43,7 @@ public class UserServiceImpl implements UserService {
 
         try {
             // Check if username already exists in local DB
+            System.out.println("test ");
             if (userRepository.existsById(userRequest.getUsername())) {
                 return StatusResponse.error("Username already exists: " + userRequest.getUsername());
             }

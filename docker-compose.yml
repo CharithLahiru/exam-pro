@@ -1,0 +1,106 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: exampro-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-RootPassword@12}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-examprodb}
+      MYSQL_USER: ${MYSQL_USER:-exampro}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-Password@12}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - exampro-network
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15
+    container_name: exampro-keycloak-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-keycloak}
+      POSTGRES_USER: ${POSTGRES_USER:-keycloak}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - exampro-network
+    restart: unless-stopped
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.0
+    container_name: exampro-keycloak
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin123}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-keycloak}
+      KC_DB_USERNAME: ${POSTGRES_USER:-keycloak}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: ${KEYCLOAK_PORT:-8081}
+      KC_HTTP_ENABLED: "true"
+    ports:
+      - "${KEYCLOAK_PORT:-8081}:8080"
+    depends_on:
+      - postgres
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+    networks:
+      - exampro-network
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./exam-pro/backend/exampro
+      dockerfile: Dockerfile
+    container_name: exampro-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-examprodb}
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-exampro}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-Password@12}
+      KEYCLOAK_AUTH_SERVER_URL: http://keycloak:8080
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-exampro-realm}
+      KEYCLOAK_CREDENTIALS_SECRET: ${KEYCLOAK_CLIENT_SECRET:-KqSwjneFKVdXOIENI8BI5Dl5hsfbFiVG}
+    ports:
+      - "${BACKEND_PORT:-8085}:8085"
+    depends_on:
+      - mysql
+      - keycloak
+    networks:
+      - exampro-network
+    profiles:
+      - full
+      - app
+
+  frontend:
+    build:
+      context: ./exam-pro/frontend
+      dockerfile: Dockerfile
+    container_name: exampro-frontend
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    depends_on:
+      - backend
+    networks:
+      - exampro-network
+    profiles:
+      - full
+      - app
+
+volumes:
+  mysql_data:
+    driver: local
+  postgres_data:
+    driver: local
+  keycloak_data:
+    driver: local
+
+networks:
+  exampro-network:
+    driver: bridge

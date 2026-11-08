@@ -18,7 +18,7 @@ public class UserController {
     }
 
     // Create user
-    @PostMapping("/createuser")
+    @PostMapping("/create-user")
     public ResponseEntity<StatusResponse> createUser(@RequestBody UserRequest userRequest) {
         StatusResponse response = userService.createUser(userRequest);
 
@@ -30,7 +30,7 @@ public class UserController {
     }
 
     // Get user by username
-    @GetMapping("/getuser/{username}")
+    @GetMapping("/get-user/{username}")
     public ResponseEntity<StatusResponse> getUser(@PathVariable String username) {
         StatusResponse response = userService.getUserByUsername(username);
 
@@ -42,7 +42,7 @@ public class UserController {
     }
 
     // Update user
-    @PutMapping("/updateUser/{username}")
+    @PutMapping("/update-user/{username}")
     public ResponseEntity<StatusResponse> updateUser(
             @PathVariable String username,
             @RequestBody UserRequest userRequest) {
@@ -56,7 +56,7 @@ public class UserController {
     }
 
     // Delete user
-    @DeleteMapping("/deleteUser/{username}")
+    @DeleteMapping("/delete-user/{username}")
     public ResponseEntity<StatusResponse> deleteUser(@PathVariable String username) {
         StatusResponse response = userService.deleteUser(username);
 

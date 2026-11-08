@@ -21,3 +21,7 @@ export interface AuthResponse {
   tokenType: string;
   expiresIn: number;
 }
+
+export interface LogoutInfromation {
+  refreshToken: string;
+}

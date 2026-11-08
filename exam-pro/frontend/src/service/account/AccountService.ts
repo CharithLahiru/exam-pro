@@ -1,62 +1,99 @@
 import Service from "../Service";
 import type { AxiosResponse } from "axios";
+import axios from "../../api/Axios";
 import type { ResponseData } from "../../types/common/CommonTypes";
-import type { AccountInformation, SignInInformation, AuthResponse } from "../../data/account/AccountInformation";
+import type { AccountInformation, SignInInformation, AuthResponse, LogoutInfromation } from "../../data/account/AccountInformation";
 
-class AccountSerice extends Service{
+class AccountSerice extends Service {
     private abortController: AbortController;
     private readonly USER_ROOT_URL = "/account";
     private readonly AUTHENTICATION_ROOT_URL = "/api/auth";
 
-    constructor(){
+    constructor() {
         super();
         this.abortController = new AbortController();
     }
 
-    //TODO: this method is not useing. should be changed
-    async getAccountInformation(userId: number,): Promise<AxiosResponse<ResponseData<AccountInformation>>> {
+    // TODO: this method is not in use. should be updated if needed.
+    async getAccountInformation(userId: number): Promise<AxiosResponse<ResponseData<AccountInformation>>> {
         try {
-        const institutionResponse = await this.axiosPrivate.get<
-            ResponseData<AccountInformation>
-        >(`${this.USER_ROOT_URL}/getaccinfo${userId}`, {
-            signal: this.abortController.signal,
-        });
+            const institutionResponse = await this.axiosPrivate.get<
+                ResponseData<AccountInformation>
+            >(`${this.USER_ROOT_URL}/getaccinfo${userId}`, {
+                signal: this.abortController.signal,
+            });
 
-        return institutionResponse;
-        } catch (error:any) {
-        throw new error();
-        }
-    }
-
-    async saveAccountInformation(accInfo: AccountInformation): Promise<AxiosResponse<ResponseData<AccountInformation>>> {
-        try {
-        const institutionResponse = await this.axiosPrivate.post<
-            ResponseData<AccountInformation>
-        >(this.USER_ROOT_URL+"/createuser", accInfo);
-
-        return institutionResponse;
-        } catch (error:any) {
-        throw new error();
-        }
-    }
-
-    async signIn(credentials: SignInInformation): Promise<AxiosResponse<ResponseData<AuthResponse>>> {
-        try {
-        const institutionResponse = await this.axiosPrivate.post<
-            ResponseData<AuthResponse>
-        >(this.AUTHENTICATION_ROOT_URL+"/login", credentials);
-
-        localStorage.setItem('accessToken',institutionResponse.data.data.accessToken)
-        localStorage.setItem('refreshToken',institutionResponse.data.data.refreshToken)
-        localStorage.setItem('tokenType',institutionResponse.data.data.tokenType)
-        localStorage.setItem('tokenExpiry',  (Date.now() + institutionResponse.data.data.expiresIn * 1000).toString() )
-        return institutionResponse;
-        } catch (error:any) {
+            return institutionResponse;
+        } catch (error: any) {
             if (error.isAxiosError && error.response) {
-            // Return the actual error response with status code
-            return error.response;
+                return error.response;
             }
-        throw new error();
+            throw error;
+        }
+    }
+
+    async saveAccountInformation(accInfo: AccountInformation): Promise<AxiosResponse<any>> {
+        try {
+            const institutionResponse = await axios.post(
+                this.USER_ROOT_URL + "/create-user",
+                accInfo
+            );
+
+            return institutionResponse;
+        } catch (error: any) {
+            if (error.isAxiosError && error.response) {
+                return error.response;
+            }
+            throw error;
+        }
+    }
+
+    async signIn(credentials: SignInInformation): Promise<AxiosResponse<any>> {
+        try {
+            const response = await axios.post(
+                this.AUTHENTICATION_ROOT_URL + "/login",
+                credentials
+            );
+
+            if (response.data && response.data.accessToken) {
+                localStorage.setItem('accessToken', response.data.accessToken);
+                localStorage.setItem('refreshToken', response.data.refreshToken);
+                localStorage.setItem('tokenType', response.data.tokenType);
+                localStorage.setItem('tokenExpiry', (Date.now() + response.data.expiresIn * 1000).toString());
+            }
+            return response;
+        } catch (error: any) {
+            if (error.isAxiosError && error.response) {
+                return error.response;
+            }
+            throw error;
+        }
+    }
+
+    async logout(): Promise<AxiosResponse> {
+        const logoutInfo: LogoutInfromation = {
+            refreshToken: String(localStorage.getItem('refreshToken') || ""),
+        };
+        try {
+            const institutionResponse = await this.axiosPrivate.post<
+                ResponseData<AuthResponse>
+            >(this.AUTHENTICATION_ROOT_URL + "/logout", logoutInfo);
+
+            if (institutionResponse.status === 200) {
+                localStorage.removeItem("loggedInUser");
+                localStorage.removeItem("accessToken");
+                localStorage.removeItem("refreshToken");
+                localStorage.removeItem("tokenType");
+                localStorage.removeItem("tokenExpiry");
+                return institutionResponse;
+            } else {
+                throw new Error("Logout failed");
+            }
+        } catch (error: any) {
+            if (error.isAxiosError && error.response) {
+                return error.response;
+            }
+            throw error;
         }
     }
 }

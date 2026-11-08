@@ -11,3 +11,6 @@ backend/target/
 *.iml
 .idea/
 .vscode/
+
+# OpenSpec
+openspec/

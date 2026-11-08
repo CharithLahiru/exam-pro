@@ -1,12 +1,17 @@
-import "./Categories.css";
-const Categories = () => {
+import { useNavigate } from "react-router-dom";
+
+function Categories() {
+  const navigate = useNavigate();
+
+  const navigateToCategory = (category: String) => {
+    navigate(`/exam-pro/${category.toLowerCase()}`);
+  };
+
   return (
     <section className="categories-section" id="categories">
       <h2 className="section-title">🎯 Explore by Category</h2>
       <div className="categories-grid">
-        <div className="category-card">
-          {" "}
-          {/* onClick={() => navigateToCategory("AL")} */}
+        <div className="category-card" onClick={() => navigateToCategory("AL")}>
           <div className="category-icon">AL</div>
           <h3 className="category-title">Advanced Level (A/L)</h3>
           <p className="category-description">
@@ -16,9 +21,8 @@ const Categories = () => {
           </p>
           <div className="btn-secondary">Explore A/L Resources</div>
         </div>
-        <div className="category-card">
-          <div className="category-icon">OL</div>{" "}
-          {/* onClick={() => navigateToCategory("OL")} */}
+        <div className="category-card" onClick={() => navigateToCategory("OL")}>
+          <div className="category-icon">OL</div>
           <h3 className="category-title">Ordinary Level (O/L)</h3>
           <p className="category-description">
             Master your O/L subjects with interactive practice tests, detailed
@@ -26,9 +30,10 @@ const Categories = () => {
           </p>
           <div className="btn-secondary">Explore O/L Resources</div>
         </div>
-        <div className="category-card">
-          {" "}
-          {/* onClick={() => navigateToCategory("Grade5")} */}
+        <div
+          className="category-card"
+          onClick={() => navigateToCategory("Grade5")}
+        >
           <div className="category-icon">G5</div>
           <h3 className="category-title">Grade 5 Scholarship</h3>
           <p className="category-description">
@@ -40,6 +45,6 @@ const Categories = () => {
       </div>
     </section>
   );
-};
+}
 
 export default Categories;

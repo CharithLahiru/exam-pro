@@ -47,6 +47,7 @@ public class SecurityConfig {
             "/api/auth/**",
 
             // User registration - MUST BE PUBLIC
+            "/account/create-user",
             "/account/createuser",
 
             // Health check

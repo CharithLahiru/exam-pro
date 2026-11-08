@@ -34,7 +34,7 @@ public class User {
     @Column(name = "ISACTIVE", length = 2)
     private String isActive;
 
-    @Column(name = "ACCOUNTTYPE", length = 10)
+    @Column(name = "ACCOUNTTYPE", length = 30)
     private String accountType;
 
     @Column(name = "IMAGEREF", length = 200)

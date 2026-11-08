@@ -168,7 +168,19 @@ public class KeycloakUserService {
         String roleName = mapAccountTypeToRole(accountType);
 
         try {
-            var roleRepresentation = realmResource.roles().get(roleName).toRepresentation();
+            org.keycloak.representations.idm.RoleRepresentation roleRepresentation = null;
+            try {
+                roleRepresentation = realmResource.roles().get(roleName).toRepresentation();
+            } catch (Exception notFound) {
+                String altRoleName = roleName.startsWith("ROLE_")
+                        ? roleName.substring(5)
+                        : "ROLE_" + roleName;
+                try {
+                    roleRepresentation = realmResource.roles().get(altRoleName).toRepresentation();
+                } catch (Exception ignored) {
+                    throw notFound;
+                }
+            }
             realmResource.users().get(userId).roles().realmLevel()
                     .add(Collections.singletonList(roleRepresentation));
         } catch (Exception e) {
@@ -180,7 +192,14 @@ public class KeycloakUserService {
      * Maps account type to Keycloak role
      */
     private String mapAccountTypeToRole(String accountType) {
-        return switch (accountType.toUpperCase()) {
+        if (accountType == null || accountType.isBlank()) {
+            return "ROLE_STUDENT";
+        }
+        String cleanType = accountType.trim().toUpperCase();
+        if (cleanType.startsWith("ROLE_")) {
+            cleanType = cleanType.substring(5);
+        }
+        return switch (cleanType) {
             case "STUDENT" -> "ROLE_STUDENT";
             case "TEACHER" -> "ROLE_TEACHER";
             case "ADMIN" -> "ROLE_ADMIN";

@@ -7,6 +7,7 @@ import Categories from "./pages/Home/Categories";
 import Footer from "./pages/common-components/Footer";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import TeachersHome from "./pages/TeachersHome";
+import ExamPage from "./pages/ExamPage";
 
 function App() {
   return (
@@ -28,6 +29,12 @@ function App() {
               }
             />
             <Route path="/exam-pro/TeachersHome" element={<TeachersHome />} />
+            <Route path="/exam-pro/ol" element={<ExamPage category="OL" />} />
+            <Route path="/exam-pro/al" element={<ExamPage category="AL" />} />
+            <Route
+              path="/exam-pro/grade5"
+              element={<ExamPage category="Grade5" />}
+            />
           </Routes>
         </main>
         <Footer />

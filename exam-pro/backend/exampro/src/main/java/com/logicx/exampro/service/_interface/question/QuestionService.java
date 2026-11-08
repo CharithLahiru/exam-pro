@@ -5,7 +5,8 @@ import com.logicx.exampro.dto.StatusResponse;
 
 public interface QuestionService {
     StatusResponse getQuestionById(String id);
-    StatusResponse createQuestion(QuestionRequest questionDetails);
-    StatusResponse updateQuestion(String username, QuestionRequest questionRequest);
+    StatusResponse createQuestion(QuestionRequest questionRequest);
+    StatusResponse updateQuestion(String questionId, QuestionRequest questionRequest);
     StatusResponse deleteQuestion(String questionId);
+    StatusResponse getRandomQuestion(String subjectId);
 }

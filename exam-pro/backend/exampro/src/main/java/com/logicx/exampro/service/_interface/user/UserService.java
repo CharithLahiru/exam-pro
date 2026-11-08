@@ -10,5 +10,4 @@ public interface UserService  {
     StatusResponse createUser(UserRequest userDetails);
     StatusResponse updateUser(String username, UserRequest userRequest);
     StatusResponse deleteUser(String username);
-
 }

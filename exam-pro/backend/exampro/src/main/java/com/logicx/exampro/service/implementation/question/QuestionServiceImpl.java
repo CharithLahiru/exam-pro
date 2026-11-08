@@ -1,5 +1,6 @@
 package com.logicx.exampro.service.implementation.question;
 
+import com.logicx.exampro.config.SecurityUtils;
 import com.logicx.exampro.dto.QuestionRequest;
 import com.logicx.exampro.dto.QuestionResponse;
 import com.logicx.exampro.dto.StatusResponse;
@@ -79,6 +80,23 @@ public class QuestionServiceImpl implements QuestionService {
 
         } catch (Exception e) {
             return StatusResponse.error("Failed to delete question: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public StatusResponse getRandomQuestion(String subjectId) {
+        try {
+            String username = SecurityUtils.getCurrentUsername();
+            Question question = questionRepository.findRandomQuestionBySubjectId(subjectId, username).orElse(null);;
+
+            if (question==null) {
+                return StatusResponse.error("Question not found for subjectId: " + subjectId);
+            }
+            QuestionResponse questionResponse = new QuestionResponse(question);
+            return StatusResponse.success("Question retrieved successfully",questionResponse);
+
+        } catch (Exception e) {
+            return StatusResponse.error("Failed to update question: " + e.getMessage());
         }
     }
 }
